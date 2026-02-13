@@ -1,4 +1,4 @@
-# Toronto Screenings Calendar Aggregator - Quick Start
+# Toronto Screenings Calendar Aggregator
 
 A modular calendar scraping system that aggregates cinema schedules from multiple sources into a single unified calendar.
 
@@ -18,8 +18,8 @@ source .venv/bin/activate
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Add OMDb API key (using `api.env`)
-# Create a file named `api.env` at project root containing:
+# 3. Add OMDb API key (using `scraper/api.env`)
+# Create a file named `api.env` in the `scraper/` folder containing:
 # OMDB_API_KEY="your_omdb_api_key_here"
 
 # 4. Install Playwright browsers
@@ -31,17 +31,17 @@ python -m playwright install chromium
 ### Run individual scrapers
 
 ```bash
-# Revue Cinema
-python -c "from revue import scrape_all; scrape_all()"
+# Revue Cinema (one-off)
+python scraper/revue.py
 
-# TIFF
-python -c "from tiff import scrape_all; scrape_all()"
+# TIFF (one-off)
+python scraper/tiff.py
 
-# Fox Theatre
-python -c "from fox import scrape_all; scrape_all()"
+# Fox Theatre (one-off)
+python scraper/fox.py
 
-# Collate calendars
-python -c "from cal_collate import collate_all; collate_all()"
+# Collate calendars (one-off)
+python cal_collate.py
 ```
 
 ### Run with automatic daily scheduling
@@ -76,9 +76,9 @@ Run the centralized in‑process scheduler directly (keeps running until stopped
 
 ```bash
 # Start the centralized in-process scheduler
-python3 scheduling.py
+python3 scraper/scheduling.py
 # Or start a single scraper with its internal scheduler
-python3 revue.py --schedule
+python3 scraper/revue.py --schedule
 ```
 
 Systemd example (short)
@@ -92,7 +92,7 @@ After=network.target
 Type=simple
 User=your_user
 WorkingDirectory=/path/to/Calendar Extract
-ExecStart=/path/to/.venv/bin/python scheduling.py
+ExecStart=/path/to/.venv/bin/python scraper/scheduling.py
 Restart=on-failure
 RestartSec=10
 
@@ -114,7 +114,7 @@ FROM python:3.11-slim
 WORKDIR /app
 COPY . /app
 RUN pip install -r requirements.txt && python -m playwright install chromium
-CMD ["python", "scheduling.py"]
+CMD ["python", "scraper/scheduling.py"]
 ```
 
 # build & run
@@ -126,9 +126,9 @@ docker run -d -v /path/to/output:/app toronto-scheduler
 For full service and container examples see `DEPLOYMENT.md`.
 
 Notes:
-- Scrapers are **cron-friendly by default**: `python revue.py` performs a one-off run suitable for cron.
+- Scrapers are **cron-friendly by default**: `python scraper/revue.py` performs a one-off run suitable for cron.
 - To set-and-forget, install the managed cron block with `./deploy/install_crontab.sh` — it is idempotent and will run scrapers, collate calendars, and rotate logs daily.
-- When using cron, ensure `api.env` (containing `OMDB_API_KEY`) exists at the project root and that `.venv` (if used) is present 
+- When using cron, ensure `api.env` (containing `OMDB_API_KEY`) exists in `scraper/` (i.e. `scraper/api.env`) and that `.venv` (if used) is present.
 - Use Ctrl+C to stop any interactive scheduler.
 
 ## Output Files
@@ -168,14 +168,19 @@ https://your-server/toronto_screenings.ics
 ## Project Structure
 
 ```
-├── scraper_utils.py         # Shared utilities (logging, browser, scheduling helpers)
-├── revue.py                 # Revue Cinema scraper (one‑off by default; use --schedule to run scheduler)
-├── fox.py                   # Fox Theatre scraper (one‑off by default; use --schedule to run scheduler)
-├── tiff.py                  # TIFF scraper (one‑off by default; use --schedule to run scheduler)
-├── scheduling.py            # Centralized scheduler for scrapers + collation (long-running service)
-├── cal_collate.py           # Calendar collation service
-├── log.py                   # Log rotation & daily archive utility
-├── deploy/                  # Cron examples and crontab installer
+├── scraper/                 # Python scraper modules + helpers
+│   ├── scraper_utils.py     # Shared utilities (logging, browser, scheduling helpers)
+│   ├── revue.py             # Revue Cinema scraper (one‑off by default; use --schedule to run scheduler)
+│   ├── fox.py               # Fox Theatre scraper (one‑off by default; use --schedule to run scheduler)
+│   ├── tiff.py              # TIFF scraper (one‑off by default; use --schedule to run scheduler)
+│   └── scheduling.py        # Centralized scheduler for scrapers + collation (long-running service)
+├── scripts/                 # Shell helpers used by cron / timers
+│   ├── run_scrapers_random.sh
+│   ├── wait_for_scrapers_and_collate.sh
+│   └── verify_collate_and_rotate.sh
+├── cal_collate.py           # Calendar collation service (combined .ics)
+├── log.py                   # Log rotation & daily archive utility (can be invoked from scripts)
+├── deploy/                  # Cron/systemd examples and installers (ignored by git)
 ├── requirements.txt         # Python dependencies
 ├── README.md                # This file
 └── DEPLOYMENT.md            # Server deployment guide

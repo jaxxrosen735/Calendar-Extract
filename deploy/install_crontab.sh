@@ -18,9 +18,9 @@ CRON_FOOTER="# <<< toronto-screenings cron block <<<"
 CRON_BLOCK=$(cat <<CRON
 ${CRON_HEADER}
 # Managed by deploy/install_crontab.sh — safely replaceable block
-0 0 * * * cd "${PROJECT_DIR}" && ./run_scrapers_random.sh >> "${PROJECT_DIR}/run_scrapers_random.log" 2>&1
-30 4 * * * cd "${PROJECT_DIR}" && ./wait_for_scrapers_and_collate.sh >> "${PROJECT_DIR}/cal_collate_cron.log" 2>&1
-30 5 * * * cd "${PROJECT_DIR}" && ./verify_collate_and_rotate.sh >> "${PROJECT_DIR}/log_rotation_cron.log" 2>&1
+0 0 * * * cd "${PROJECT_DIR}" && ./scripts/run_scrapers_random.sh >> "${PROJECT_DIR}/run_scrapers_random.log" 2>&1
+30 4 * * * cd "${PROJECT_DIR}" && ./scripts/wait_for_scrapers_and_collate.sh >> "${PROJECT_DIR}/cal_collate_cron.log" 2>&1
+30 5 * * * cd "${PROJECT_DIR}" && ./scripts/verify_collate_and_rotate.sh >> "${PROJECT_DIR}/log_rotation_cron.log" 2>&1
 ${CRON_FOOTER}
 CRON
 )

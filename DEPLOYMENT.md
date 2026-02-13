@@ -5,9 +5,7 @@
 This system aggregates multiple calendar sources (Revue Cinema, TIFF, etc.) into a single master calendar that can be subscribed to from Google Calendar, Apple Calendar, Outlook, etc.
 
 **Services:**
-- **revue.py** - Scrapes Revue Cinema calendar (daily, random 11 PM - 4 AM ET). 
-- **tiff.py** - Scrapes TIFF calendar (daily, random 11 PM - 4 AM ET).
-- **fox.py** - Scrapes Fox Theatre (daily, random 11 PM - 4 AM ET). 
+- **scraper/** (contains `revue.py`, `tiff.py`, `fox.py`, `scheduling.py`) — scrapers run nightly (random 11 PM - 4 AM ET).
 - **cal_collate.py** - Combines all .ics files (daily at 5 AM ET)
 
 Each service runs independently with its own logging and scheduling. A `omdb_not_found.txt` file collects titles not matched by the OMDb API for later review.
@@ -37,7 +35,7 @@ Each service runs independently with its own logging and scheduling. A `omdb_not
 
 3. **OMDb API key (required for runtime lookups):**
    - The scrapers use OMDb to fetch runtimes (used to calculate event end times = start + 15min previews + runtime).
-   - **Preferred (recommended):** Create an `api.env` file at the project root containing `OMDB_API_KEY="your_key_here"`. The scrapers load `api.env` automatically via `python-dotenv`.
+- **Preferred (recommended):** Create an `api.env` file inside the `scraper/` folder containing `OMDB_API_KEY="your_key_here"`. The scrapers load `scraper/api.env` automatically via `python-dotenv`.
    - **Alternative:** Set `OMDB_API_KEY` (or `API_KEY`) in the environment if you prefer not to use `api.env`.
    - Unmatched titles are appended to `omdb_not_found.txt`.
    - OMDb rate limit: ~1000 requests / 24 hours — cache is implemented to minimize calls.
@@ -51,13 +49,13 @@ Each service runs independently with its own logging and scheduling. A `omdb_not
 
 ### One-time scrape example:
 ```bash
-python -c "from revue import scrape_all; scrape_all()"
+python -c "from scraper.revue import scrape_all; scrape_all()"
 ```
 
 ### Scheduled mode (runs immediately + daily scheduler):
 ```bash
 # Run scraper once and start the in-process scheduler
-python revue.py -s
+python scraper/revue.py -s   # short flag for --schedule
 ```
 
 This will:
@@ -83,7 +81,7 @@ Type=simple
 User=your_username
 WorkingDirectory=/path/to/Calendar Extract
 # Note: `-s` (or --schedule) tells the scraper to run as a long-running scheduler
-ExecStart=/path/to/.venv/bin/python revue.py -s
+ExecStart=/path/to/.venv/bin/python /path/to/Calendar\ Extract/scraper/revue.py -s
 Restart=on-failure
 RestartSec=10
 StandardOutput=append:/path/to/Calendar Extract/revue_scraper.log
@@ -112,7 +110,7 @@ Type=simple
 User=your_username
 WorkingDirectory=/path/to/Calendar Extract
 EnvironmentFile=/path/to/Calendar Extract/api.env
-ExecStart=/path/to/.venv/bin/python scheduling.py
+ExecStart=/path/to/.venv/bin/python /path/to/Calendar\ Extract/scraper/scheduling.py
 Restart=on-failure
 RestartSec=10
 StartLimitIntervalSec=60
@@ -179,10 +177,10 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt && \
     python -m playwright install chromium
 
-COPY revue.py .
+# Copy scraper folder and run the Revue scraper in scheduled mode
+COPY scraper/ ./scraper/
 
-# Run the scraper in scheduled mode so the container remains running
-CMD ["python", "revue.py", "-s"]
+CMD ["python", "scraper/revue.py", "-s"]
 ```
 
 Create `requirements.txt`:
@@ -206,7 +204,7 @@ If you prefer simpler cron scheduling instead of the in-process scheduler. Add t
 
 ```bash
 # Run at a fixed time daily (example: 2:30 AM local time)
-30 2 * * * cd /path/to/Calendar\ Extract && /path/to/.venv/bin/python revue.py
+30 2 * * * cd /path/to/Calendar\ Extract && /path/to/.venv/bin/python scraper/revue.py
 ```
 
 Alternatively use the included idempotent cron installer (`deploy/install_crontab.sh`) to set up the full daily workflow (scrapers → collate → rotate).
@@ -328,7 +326,7 @@ ENV PYTHONUNBUFFERED=1
 HEALTHCHECK --interval=5m --timeout=10s --start-period=2m --retries=3 \
   CMD bash -lc "test -s /app/toronto_screenings.ics && find /app/toronto_screenings.ics -mmin -4320 >/dev/null || exit 1"
 
-CMD ["python", "scheduling.py"]
+CMD ["python", "scraper/scheduling.py"]
 ```
 
 docker-compose (suggested settings)
