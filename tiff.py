@@ -4,7 +4,7 @@ Scrapes tiff.net/calendar for event listings and generates tiff.ics
 Integrates with OMDb API to get runtimes for accurate end times
 """
 
-from scraper_utils import setup_logging, launch_browser, schedule_daily
+from scraper_utils import setup_logging, launch_browser, schedule_daily, log_omdb_not_found
 from bs4 import BeautifulSoup
 from ics import Calendar, Event
 from datetime import datetime, timedelta
@@ -170,12 +170,15 @@ def parse_page(soup, calendar_obj):
     return event_count
 
 def save_not_found_titles():
-    """Save titles not found in OMDb to a text file."""
+    """Save titles not found in OMDb to `omdb_not_found.txt`, tagging the source."""
     if not_found_titles:
-        with open('omdb_not_found.txt', 'a', encoding='utf-8') as f:
-            f.write("\n--- TIFF.net (generated " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ") ---\n")
-            for title in sorted(not_found_titles):
-                f.write(f"{title}\n")
+        for title in sorted(not_found_titles):
+            try:
+                log_omdb_not_found(title, 'tiff.py')
+            except Exception:
+                # Fallback: append plainly if the helper fails
+                with open('omdb_not_found.txt', 'a', encoding='utf-8') as f:
+                    f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - tiff.py - Not Found: {title}\n")
 
 def scrape_all():
     """Main scraping function for TIFF.net calendar."""

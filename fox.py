@@ -3,7 +3,7 @@ Fox Theatre Calendar Scraper
 Scrapes foxtheatre.ca/whats-on/now-showing/ for event listings and generates fox.ics
 """
 
-from scraper_utils import setup_logging, launch_browser, schedule_daily
+from scraper_utils import setup_logging, launch_browser, schedule_daily, log_omdb_not_found
 from bs4 import BeautifulSoup
 from ics import Calendar, Event
 from datetime import datetime, timedelta
@@ -65,10 +65,9 @@ def get_movie_duration_minutes(title):
     except Exception as e:
         logger.debug(f"OMDb API Error for {title}: {e}")
 
-    # Log lookup failures
+    # Log lookup failures (include source)
     try:
-        with open("omdb_not_found.txt", "a", encoding="utf-8") as f:
-            f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Not Found: {title}\n")
+        log_omdb_not_found(title, 'fox.py')
     except Exception:
         pass
     return 120 # 2 hour fallback
