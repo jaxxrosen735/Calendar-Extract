@@ -1,0 +1,6 @@
+*.env
+*.json
+*.log
+*.ics
+debug*.html
+*.pyc
