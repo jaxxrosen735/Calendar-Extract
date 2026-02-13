@@ -4,7 +4,7 @@ Scrapes the Revue Cinema scheduling calendar and generates revue.ics
 Integrates with OMDb API to get runtimes for accurate end times
 """
 
-from scraper_utils import setup_logging, launch_browser, find_next_button, schedule_daily
+from scraper_utils import setup_logging, launch_browser, find_next_button, schedule_daily, log_omdb_not_found
 from bs4 import BeautifulSoup
 from ics import Calendar, Event
 from datetime import datetime, timedelta
@@ -121,6 +121,17 @@ def get_movie_runtime(raw_title):
     not_found_titles.add(raw_title)
     return None
 
+
+def save_not_found_titles():
+    """Append Revue titles not found in OMDb to `omdb_not_found.txt` with source tag."""
+    if not_found_titles:
+        for title in sorted(not_found_titles):
+            try:
+                log_omdb_not_found(title, 'revue.py')
+            except Exception:
+                with open('omdb_not_found.txt', 'a', encoding='utf-8') as f:
+                    f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - revue.py - Not Found: {title}\n")
+
 def parse_page(soup, calendar_obj):
     """Parses events and sets DTEND based on OMDb runtime + 15 mins."""
     event_count = 0
@@ -204,6 +215,12 @@ def scrape_all():
         with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
             f.writelines(full_cal.serialize_iter())
         
+        # Save any OMDb misses for manual review (tagged by source)
+        try:
+            save_not_found_titles()
+        except Exception as ex:
+            logger.debug(f"Failed to save not-found titles: {ex}")
+
         logger.info(f"SCRAPE COMPLETE: Found {total_events} events.")
         
     except Exception as ex:

@@ -179,3 +179,19 @@ def schedule_at_time(
     logger.info(f"Scheduler started for {job_name}")
     
     return scheduler
+
+
+# ----- OMDb debug helper -----
+
+def log_omdb_not_found(title: str, source: str):
+    """Append a standardized 'not found in OMDb' line to `omdb_not_found.txt`.
+
+    Format: YYYY-MM-DD HH:MM:SS - <source> - Not Found: <title>
+    """
+    try:
+        with open('omdb_not_found.txt', 'a', encoding='utf-8') as f:
+            f.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {source} - Not Found: {title}\n")
+    except Exception as ex:
+        logger = logging.getLogger(__name__)
+        logger.debug(f"Failed to write to omdb_not_found.txt: {ex}")
+

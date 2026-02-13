@@ -2,5 +2,8 @@
 *.json
 *.log
 *.ics
+*.zip
 debug*.html
 *.pyc
+omdb_not_found_archive.txt
+omdb_not_found.txt
