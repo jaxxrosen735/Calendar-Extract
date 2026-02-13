@@ -14,7 +14,7 @@ fi
 # If combined calendar is missing or older than 24h, attempt to collate again
 if [ ! -f "$PROJECT_ROOT/toronto_screenings.ics" ] || [ $(find "$PROJECT_ROOT/toronto_screenings.ics" -mtime +0 2>/dev/null || true) ]; then
   echo "$(date -u +'%Y-%m-%d %H:%M:%S') - toronto_screenings.ics missing/old — re-running collate" >> "$PROJECT_ROOT/cal_collate.log"
-  $PYTHON "$PROJECT_ROOT/cal_collate.py" >> "$PROJECT_ROOT/cal_collate.log" 2>&1 || echo "$(date -u) - collate retry failed" >> "$PROJECT_ROOT/cal_collate.log"
+  $PYTHON "$PROJECT_ROOT/scraper/cal_collate.py" >> "$PROJECT_ROOT/cal_collate.log" 2>&1 || echo "$(date -u) - collate retry failed" >> "$PROJECT_ROOT/cal_collate.log"
 fi
 
 # If collated file present and non-empty, run log rotation

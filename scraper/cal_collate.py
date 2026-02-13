@@ -4,7 +4,7 @@ Combines multiple calendar .ics files into a single master calendar (toronto_scr
 Runs daily at 5 AM ET and monitors file modification times
 """
 
-from scraper_utils import setup_logging, schedule_at_time
+from scraper.scraper_utils import setup_logging, schedule_at_time
 from ics import Calendar
 import os
 import glob

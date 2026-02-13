@@ -20,7 +20,7 @@ from scraper_utils import schedule_daily, schedule_at_time
 from revue import scrape_all as revue_scrape
 from tiff import scrape_all as tiff_scrape
 from fox import scrape_all as fox_scrape
-from cal_collate import collate_all as collate_all
+from scraper.cal_collate import collate_all as collate_all
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

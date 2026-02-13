@@ -33,8 +33,8 @@ while true; do
   sleep "$POLL_SEC"
 done
 
-# Run collation (this also calls rotate_and_zip_logs via cal_collate)
-$PYTHON "$PROJECT_ROOT/cal_collate.py" >> "$PROJECT_ROOT/cal_collate.log" 2>&1 || echo "$(date -u) - collate failed" >> "$PROJECT_ROOT/cal_collate.log"
+# Run collation (this also calls rotate_and_zip_logs via scraper.cal_collate)
+$PYTHON "$PROJECT_ROOT/scraper/cal_collate.py" >> "$PROJECT_ROOT/cal_collate.log" 2>&1 || echo "$(date -u) - collate failed" >> "$PROJECT_ROOT/cal_collate.log"
 
 # Remove sentinel to reset for next day
 rm -f "$PROJECT_ROOT/scrapers_last_done.txt" || true

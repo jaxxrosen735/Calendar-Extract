@@ -218,7 +218,7 @@ python -m http.server 8000 --directory /path/to/Calendar\ Extract
 
 Access at: `http://your-server:8000/revue.ics`
 
-Note: In production you will probably host `toronto_screenings.ics` (the combined feed). All `.ics` outputs (including `revue.ics`, `tiff.ics`, `fox.ics`) are colocated in the project folder and auto-discovered by `cal_collate.py`.
+Note: In production you will probably host `toronto_screenings.ics` (the combined feed). All `.ics` outputs (including `revue.ics`, `tiff.ics`, `fox.ics`) are colocated in the project folder and auto-discovered by `scraper/cal_collate.py`.
 
 ### Option 2: Nginx
 ```nginx

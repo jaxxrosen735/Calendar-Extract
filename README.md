@@ -41,7 +41,7 @@ python scraper/tiff.py
 python scraper/fox.py
 
 # Collate calendars (one-off)
-python cal_collate.py
+python scraper/cal_collate.py
 ```
 
 ### Run with automatic daily scheduling
@@ -55,7 +55,7 @@ Using the idempotent cron installer
 The repository includes `deploy/install_crontab.sh` which installs a managed crontab block that runs the full daily workflow for you:
 
 - `run_scrapers_random.sh` — invoked at 00:00 daily by the cron block; sleeps a random delay (0–4 hours) and runs `revue`, `tiff` and `fox` scrapers (so scraping occurs between 00:00–04:00 local time).
-- `wait_for_scrapers_and_collate.sh` — scheduled at 04:30; waits for the scrapers to finish then runs `cal_collate.collate_all()` to produce `toronto_screenings.ics`.
+wait_for_scrapers_and_collate.sh — scheduled at 04:30; waits for the scrapers to finish then runs `scraper.cal_collate.collate_all()` to produce `toronto_screenings.ics`.
 - `verify_collate_and_rotate.sh` — scheduled at 05:30; verifies the combined calendar and runs `log.rotate_and_zip_logs()` (creates the daily `YYYYMMDD_logs.zip`).
 
 Once installed you can set it and forget it — the crontab runs every day, updates the `.ics` files, and archives logs automatically.
