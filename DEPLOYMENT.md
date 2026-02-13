@@ -70,7 +70,7 @@ Note: scrapers are **one‑off by default**; omit `-s` if you want a single run 
 
 ## Server Deployment
 
-### Option 1: Systemd Service (Linux/macOS with Homebrew)
+### Option 1: Systemd Service
 
 Create `/etc/systemd/system/revue-scraper.service` (run scraper in scheduled mode):
 ```ini
@@ -99,7 +99,7 @@ sudo systemctl enable revue-scraper
 sudo systemctl start revue-scraper
 ```
 
-Systemd unit for the centralized scheduler (recommended if you want a single long‑running process)
+Systemd unit for the centralized scheduler
 
 Create `/etc/systemd/system/toronto-scheduler.service`:
 ```ini
@@ -202,7 +202,8 @@ docker run -d -v /path/to/output:/app revue-scraper
 
 ### Option 3: Cron Job (One-time daily run)
 
-If you prefer simpler cron scheduling instead of the in-process scheduler, no code changes are necessary — scrapers run once by default. Add the scraper to your crontab to run it daily at your chosen time:
+If you prefer simpler cron scheduling instead of the in-process scheduler. Add the scraper to your crontab to run it daily at your chosen time:
+
 ```bash
 # Run at a fixed time daily (example: 2:30 AM local time)
 30 2 * * * cd /path/to/Calendar\ Extract && /path/to/.venv/bin/python revue.py
@@ -273,7 +274,6 @@ tail -f revue_scraper.log
 
 **"Incapsula incident ID"**
 - The website blocked the scraper. This shouldn't happen with Playwright headless
-- Add delays or try rotating user agents
 
 **"ModuleNotFoundError"**
 ```bash
@@ -282,12 +282,11 @@ pip install -r requirements.txt
 ```
 
 **"Browser crashed"**
-- Increase memory/resources on server
 - Reduce `PAGES_TO_SCRAPE` or add delays
 
 ## Monitoring
 
-The scraper logs everything to `revue_scraper.log` including:
+The scraper logs everything to `*_scraper.log` including:
 - Start/stop times
 - Number of events extracted
 - Error codes and stack traces
@@ -352,20 +351,6 @@ services:
       retries: 3
       start_period: 2m
 ```
-
-Set up log rotation to prevent disk space issues:
-```bash
-# /etc/logrotate.d/revue-scraper
-/path/to/Calendar\ Extract/revue_scraper.log {
-    daily
-    rotate 7
-    compress
-    delaycompress
-    notifempty
-}
-```
-
-
 ## Performance Notes
 
 - **Headless mode**: Runs ~30 seconds per full scrape
@@ -375,4 +360,4 @@ Set up log rotation to prevent disk space issues:
 
 ---
 
-For questions or issues, check the verbose logs in `revue_scraper.log`.
+For questions or issues, check the log files.

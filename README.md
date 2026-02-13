@@ -8,7 +8,7 @@ A modular calendar scraping system that aggregates cinema schedules from multipl
 - **Fox Theatre** → `fox.ics`
 - **Combined Calendar** → `toronto_screenings.ics` (all events merged)
 
-## Installation (5 minutes)
+## Installation
 
 ```bash
 # 1. Create virtual environment
@@ -46,7 +46,7 @@ python -c "from cal_collate import collate_all; collate_all()"
 
 ### Run with automatic daily scheduling
 
-There are two supported ways to run scheduled jobs — **cron-based** (recommended) or a **long-running scheduler**.
+There are two supported ways to run scheduled jobs — **cron-based** or a **long-running scheduler**.
 
 Cron 
 
@@ -106,7 +106,7 @@ Systemd timer option (cron replacement)
 - `toronto-scrapers.timer` runs `run_scrapers_random.sh` (script applies a random sleep 0–4h); `toronto-collate.timer` runs at 04:30 and `toronto-verify.timer` runs at 05:30.
 - Install by copying `deploy/toronto-*.service|.timer` to `/etc/systemd/system/`, then `sudo systemctl daemon-reload` and `sudo systemctl enable --now <timer-name>`.
 
-Docker example (short)
+Docker example
 
 ```dockerfile
 # Dockerfile.scheduler (example)
@@ -127,8 +127,8 @@ For full service and container examples see `DEPLOYMENT.md`.
 
 Notes:
 - Scrapers are **cron-friendly by default**: `python revue.py` performs a one-off run suitable for cron.
-- To set-and-forget, install the managed cron block with `./deploy/install_crontab.sh` — it is idempotent and will run scrapers, collate calendars, and rotate logs daily; once installed you can rely on the `.ics` files being updated automatically.
-- When using cron, ensure `api.env` (containing `OMDB_API_KEY`) exists at the project root and that `.venv` (if used) is present — the cron scripts `cd` into the repo and prefer `.venv/bin/python`.
+- To set-and-forget, install the managed cron block with `./deploy/install_crontab.sh` — it is idempotent and will run scrapers, collate calendars, and rotate logs daily.
+- When using cron, ensure `api.env` (containing `OMDB_API_KEY`) exists at the project root and that `.venv` (if used) is present 
 - Use Ctrl+C to stop any interactive scheduler.
 
 ## Output Files
@@ -151,9 +151,6 @@ Notes:
 - Rotated files are bundled into a single daily archive named `YYYYMMDD_logs.zip` (e.g. `20260213_logs.zip`) and the intermediate dated files are removed after archiving.
 - The rotation logic lives in `log.py` (function `rotate_and_zip_logs()`); `cal_collate` invokes it automatically after a successful collation.
 - After rotation the live filenames (`revue_scraper.log`, etc.) are recreated as empty files so scrapers continue writing to the same paths.
-- To run manually: `python3 log.py` (or `from log import rotate_and_zip_logs; rotate_and_zip_logs()`).
-- If you want automatic retention (delete archives older than N days), add a retention step — recommended as a follow-up.
-
 
 ## Subscribe to Calendar
 
@@ -178,7 +175,7 @@ https://your-server/toronto_screenings.ics
 ├── scheduling.py            # Centralized scheduler for scrapers + collation (long-running service)
 ├── cal_collate.py           # Calendar collation service
 ├── log.py                   # Log rotation & daily archive utility
-├── deploy/                  # Cron examples and crontab installer (ignored by git)
+├── deploy/                  # Cron examples and crontab installer
 ├── requirements.txt         # Python dependencies
 ├── README.md                # This file
 └── DEPLOYMENT.md            # Server deployment guide
@@ -217,9 +214,8 @@ pip install -r requirements.txt
 ```
 
 **Browser crashes:**
-- Increase server memory
 - Reduce `PAGES_TO_SCRAPE`
-- Add delays in page navigation
+
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for production server setup.
 
