@@ -5,24 +5,22 @@
 This system aggregates multiple calendar sources (Revue Cinema, TIFF, etc.) into a single master calendar that can be subscribed to from Google Calendar, Apple Calendar, Outlook, etc.
 
 **Services:**
-- **revue.py** - Scrapes Revue Cinema calendar (daily, random 11 PM - 4 AM ET). Now uses OMDb to fetch runtimes and writes accurate event end times.
-- **tiff.py** - Scrapes TIFF calendar (daily, random 11 PM - 4 AM ET). Adds `location` in events and uses OMDb for runtime/end-time calculation (previews + runtime).
-- **fox.py** - Scrapes Fox Theatre (daily, random 11 PM - 4 AM ET). Adds `location` and OMDb runtime lookups for accurate end times.
+- **revue.py** - Scrapes Revue Cinema calendar (daily, random 11 PM - 4 AM ET). 
+- **tiff.py** - Scrapes TIFF calendar (daily, random 11 PM - 4 AM ET).
+- **fox.py** - Scrapes Fox Theatre (daily, random 11 PM - 4 AM ET). 
 - **cal_collate.py** - Combines all .ics files (daily at 5 AM ET)
 
-Each service runs independently with its own logging and scheduling. A shared `omdb_not_found.txt` file collects titles not matched by the OMDb API for later review.
+Each service runs independently with its own logging and scheduling. A `omdb_not_found.txt` file collects titles not matched by the OMDb API for later review.
 
 **Architecture:**
-- Shared utilities in `scraper_utils.py` reduce code duplication
 - Each scraper is modular and can run independently
 - Collation service automatically includes all `*.ics` files
-- Easy to add new scrapers by following the template
 
 ## Setup
 
 ### Prerequisites
 - Python 3.8+
-- Virtual environment
+- Recommended: virtual environment
 
 ### Installation
 
@@ -35,15 +33,13 @@ Each service runs independently with its own logging and scheduling. A shared `o
 2. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
-   # or (explicit):
-   pip install playwright beautifulsoup4 ics apscheduler pytz requests
    ```
 
 3. **OMDb API key (required for runtime lookups):**
    - The scrapers use OMDb to fetch runtimes (used to calculate event end times = start + 15min previews + runtime).
    - **Preferred (recommended):** Create an `api.env` file at the project root containing `OMDB_API_KEY="your_key_here"`. The scrapers load `api.env` automatically via `python-dotenv`.
    - **Alternative:** Set `OMDB_API_KEY` (or `API_KEY`) in the environment if you prefer not to use `api.env`.
-   - A fuzzy-title search fallback is implemented to reduce misses; unmatched titles are appended to `omdb_not_found.txt`.
+   - Unmatched titles are appended to `omdb_not_found.txt`.
    - OMDb rate limit: ~1000 requests / 24 hours — cache is implemented to minimize calls.
 
 3. **Install Playwright browsers:**
@@ -53,37 +49,41 @@ Each service runs independently with its own logging and scheduling. A shared `o
 
 ## Running Locally
 
-### One-time scrape:
+### One-time scrape example:
 ```bash
 python -c "from revue import scrape_all; scrape_all()"
 ```
 
 ### Scheduled mode (runs immediately + daily scheduler):
 ```bash
-python revue.py
+# Run scraper once and start the in-process scheduler
+python revue.py -s
 ```
 
 This will:
 1. Run the scraper immediately
-2. Start a background scheduler that runs daily at a random time between 11 PM - 4 AM ET
+2. Start a background scheduler **(requires `-s` / `--schedule`)** that runs daily at a random time between 11 PM - 4 AM ET
 3. Update `revue.ics` on each run
 4. Log all activity to `revue_scraper.log`
+
+Note: scrapers are **one‑off by default**; omit `-s` if you want a single run (useful for cron).
 
 ## Server Deployment
 
 ### Option 1: Systemd Service (Linux/macOS with Homebrew)
 
-Create `/etc/systemd/system/revue-scraper.service`:
+Create `/etc/systemd/system/revue-scraper.service` (run scraper in scheduled mode):
 ```ini
 [Unit]
-Description=Revue Cinema Calendar Scraper
+Description=Revue Cinema Calendar Scraper (scheduled mode)
 After=network.target
 
 [Service]
 Type=simple
 User=your_username
 WorkingDirectory=/path/to/Calendar Extract
-ExecStart=/path/to/.venv/bin/python revue.py
+# Note: `-s` (or --schedule) tells the scraper to run as a long-running scheduler
+ExecStart=/path/to/.venv/bin/python revue.py -s
 Restart=on-failure
 RestartSec=10
 StandardOutput=append:/path/to/Calendar Extract/revue_scraper.log
@@ -93,11 +93,74 @@ StandardError=append:/path/to/Calendar Extract/revue_scraper.log
 WantedBy=multi-user.target
 ```
 
-Enable and start:
+Enable and start (example):
 ```bash
 sudo systemctl enable revue-scraper
 sudo systemctl start revue-scraper
 ```
+
+Systemd unit for the centralized scheduler (recommended if you want a single long‑running process)
+
+Create `/etc/systemd/system/toronto-scheduler.service`:
+```ini
+[Unit]
+Description=Toronto Screenings Scheduler (centralized APScheduler)
+After=network.target
+
+[Service]
+Type=simple
+User=your_username
+WorkingDirectory=/path/to/Calendar Extract
+EnvironmentFile=/path/to/Calendar Extract/api.env
+ExecStart=/path/to/.venv/bin/python scheduling.py
+Restart=on-failure
+RestartSec=10
+StartLimitIntervalSec=60
+StartLimitBurst=5
+StandardOutput=append:/path/to/Calendar Extract/scheduling.log
+StandardError=append:/path/to/Calendar Extract/scheduling.log
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start the scheduler service:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable toronto-scheduler
+sudo systemctl start toronto-scheduler
+```
+
+Tips:
+- `EnvironmentFile` makes it easy to provide `OMDB_API_KEY` without embedding secrets in the unit file.
+- `Restart=on-failure` + `StartLimit*` prevent crash loops while keeping the service resilient.
+- Logs are written to `scheduling.log` (or view with `journalctl -u toronto-scheduler`).
+
+### Systemd timers (cron replacement)
+
+If you'd prefer to use systemd timers instead of cron the repository includes example timer + service units under `deploy/`.
+These timers replicate the managed-cron workflow (`run_scrapers_random.sh` → `wait_for_scrapers_and_collate.sh` → `verify_collate_and_rotate.sh`) and support randomized delays via the script itself and `RandomizedDelaySec` in the timer.
+
+Install and enable the example timers:
+
+```bash
+# Copy unit files into place and reload systemd
+sudo cp deploy/toronto-*.service /etc/systemd/system/
+sudo cp deploy/toronto-*.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+
+# Enable & start timers (set-and-forget)
+sudo systemctl enable --now toronto-scrapers.timer toronto-collate.timer toronto-verify.timer
+
+# Inspect scheduled timers
+systemctl list-timers --all | grep toronto
+```
+
+Notes:
+- `toronto-scrapers.timer` fires at midnight and the `run_scrapers_random.sh` script applies a 0–4h randomized sleep (the timer also sets `RandomizedDelaySec=14400` by default).
+- `toronto-collate.timer` runs `wait_for_scrapers_and_collate.sh` at 04:30; `toronto-verify.timer` runs `verify_collate_and_rotate.sh` at 05:30.
+- To remove: `sudo systemctl disable --now toronto-*.timer toronto-*.service`
+
 
 ### Option 2: Docker Container
 
@@ -118,7 +181,8 @@ RUN pip install -r requirements.txt && \
 
 COPY revue.py .
 
-CMD ["python", "revue.py"]
+# Run the scraper in scheduled mode so the container remains running
+CMD ["python", "revue.py", "-s"]
 ```
 
 Create `requirements.txt`:
@@ -138,19 +202,13 @@ docker run -d -v /path/to/output:/app revue-scraper
 
 ### Option 3: Cron Job (One-time daily run)
 
-If you prefer simpler cron scheduling instead of built-in scheduler, modify `revue.py` main block:
-
-```python
-if __name__ == "__main__":
-    scrape_all()  # Just run once
-```
-
-Then add to crontab:
+If you prefer simpler cron scheduling instead of the in-process scheduler, no code changes are necessary — scrapers run once by default. Add the scraper to your crontab to run it daily at your chosen time:
 ```bash
-# Run at random time between 11 PM and 4 AM
-# Example: 2:30 AM daily
+# Run at a fixed time daily (example: 2:30 AM local time)
 30 2 * * * cd /path/to/Calendar\ Extract && /path/to/.venv/bin/python revue.py
 ```
+
+Alternatively use the included idempotent cron installer (`deploy/install_crontab.sh`) to set up the full daily workflow (scrapers → collate → rotate).
 
 ## Hosting the ICS File
 
@@ -235,6 +293,66 @@ The scraper logs everything to `revue_scraper.log` including:
 - Error codes and stack traces
 - Scheduler status
 
+Health checks & restart guidance
+
+- Systemd: prefer `Restart=on-failure` (already present in examples). Add a small health‑check script that verifies the combined calendar is present and reasonably fresh; configure external monitoring or an OnFailure target if you want alerting.
+
+Example health check script (`deploy/health_check.sh`):
+```bash
+#!/usr/bin/env bash
+# Return 0 if toronto_screenings.ics exists and is newer than 36 hours, otherwise non-zero
+FILE="/path/to/Calendar Extract/toronto_screenings.ics"
+if [ -f "$FILE" ] && [ $(find "$FILE" -mmin -2160 2>/dev/null) ]; then
+  exit 0
+else
+  echo "toronto_screenings.ics missing or stale" >&2
+  exit 1
+fi
+```
+
+- Docker: use `HEALTHCHECK` in the scheduler image (example below). Combine with `restart: unless-stopped` in `docker-compose.yml` for automatic restarts.
+
+Dockerfile.scheduler (healthcheck example)
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN apt-get update && apt-get install -y \
+    libgconf-2-4 libx11-6 libxext6 libxrender-dev curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install -r requirements.txt \
+    && python -m playwright install chromium
+COPY . .
+ENV PYTHONUNBUFFERED=1
+
+# Healthcheck: consider toronto_screenings.ics presence/age (start-period allows initial run)
+HEALTHCHECK --interval=5m --timeout=10s --start-period=2m --retries=3 \
+  CMD bash -lc "test -s /app/toronto_screenings.ics && find /app/toronto_screenings.ics -mmin -4320 >/dev/null || exit 1"
+
+CMD ["python", "scheduling.py"]
+```
+
+docker-compose (suggested settings)
+```yaml
+version: '3.8'
+services:
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    restart: unless-stopped
+    volumes:
+      - ./data:/app
+    environment:
+      - OMDB_API_KEY=your_key_here
+    healthcheck:
+      test: ["CMD", "bash", "-lc", "test -s /app/toronto_screenings.ics && find /app/toronto_screenings.ics -mmin -4320 >/dev/null || exit 1"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
+      start_period: 2m
+```
+
 Set up log rotation to prevent disk space issues:
 ```bash
 # /etc/logrotate.d/revue-scraper
@@ -246,6 +364,7 @@ Set up log rotation to prevent disk space issues:
     notifempty
 }
 ```
+
 
 ## Performance Notes
 

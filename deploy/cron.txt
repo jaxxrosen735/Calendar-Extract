@@ -1,0 +1,11 @@
+# Cron entries for calendar scrapers
+# Place these lines into your crontab (crontab -e)
+
+# 1) Run scrapers at a random time between 00:00-04:00 (script sleeps a random delay)
+0 0 * * * cd '/Users/joshrosen/Library/CloudStorage/OneDrive-TheWorksDesignCommunicationsLtd/Docs - Personal/Calendar Extract' && ./run_scrapers_random.sh >> run_scrapers_random.log 2>&1
+
+# 2) Wait for scrapers to finish, then collate (scheduled after scraper window)
+30 4 * * * cd '/Users/joshrosen/Library/CloudStorage/OneDrive-TheWorksDesignCommunicationsLtd/Docs - Personal/Calendar Extract' && ./wait_for_scrapers_and_collate.sh >> cal_collate_cron.log 2>&1
+
+# 3) Verify collation finished, then rotate & zip logs
+30 5 * * * cd '/Users/joshrosen/Library/CloudStorage/OneDrive-TheWorksDesignCommunicationsLtd/Docs - Personal/Calendar Extract' && ./verify_collate_and_rotate.sh >> log_rotation_cron.log 2>&1

@@ -4,6 +4,7 @@ Scrapes foxtheatre.ca/whats-on/now-showing/ for event listings and generates fox
 """
 
 from scraper_utils import setup_logging, launch_browser, schedule_daily, log_omdb_not_found
+import sys
 from bs4 import BeautifulSoup
 from ics import Calendar, Event
 from datetime import datetime, timedelta
@@ -181,22 +182,20 @@ def schedule_scrape():
     )
     return scheduler
 
+
 if __name__ == "__main__":
-    logger.info("Fox Theatre Calendar Scraper Starting")
-    
-    # Run once immediately
-    logger.info("Running initial scrape...")
-    scrape_all()
-    
-    # Schedule for daily runs
-    logger.info("\nStarting scheduled scraper...")
-    scheduler = schedule_scrape()
-    
-    try:
-        logger.info("Scraper is running. Press Ctrl+C to stop.")
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        logger.info("Shutting down scheduler...")
-        scheduler.shutdown()
-        logger.info("Scheduler stopped")
+    # Default behaviour: one-off run (cron-friendly). Use --schedule to run background scheduler.
+    if '--schedule' in sys.argv or '-s' in sys.argv:
+        logger.info("Fox Theatre Calendar Scraper Starting (scheduled mode)")
+        scheduler = schedule_scrape()
+        try:
+            logger.info("Scheduler running — press Ctrl+C to stop")
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            logger.info("Shutting down scheduler...")
+            scheduler.shutdown()
+            logger.info("Scheduler stopped")
+    else:
+        logger.info("Fox Theatre Calendar Scraper Starting — one-off run")
+        scrape_all()

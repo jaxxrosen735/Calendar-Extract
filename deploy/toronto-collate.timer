@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily timer to collate calendars
+
+[Timer]
+OnCalendar=*-*-*04:30:00
+Persistent=true
+Unit=toronto-collate.service
+
+[Install]
+WantedBy=timers.target

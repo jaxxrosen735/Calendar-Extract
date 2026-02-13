@@ -21,7 +21,6 @@ pip install -r requirements.txt
 # 3. Add OMDb API key (using `api.env`)
 # Create a file named `api.env` at project root containing:
 # OMDB_API_KEY="your_omdb_api_key_here"
-# (the scrapers load `api.env` automatically via python-dotenv)
 
 # 4. Install Playwright browsers
 python -m playwright install chromium
@@ -47,27 +46,98 @@ python -c "from cal_collate import collate_all; collate_all()"
 
 ### Run with automatic daily scheduling
 
+There are two supported ways to run scheduled jobs — **cron-based** (recommended) or a **long-running scheduler**.
+
+Cron 
+
+Using the idempotent cron installer 
+
+The repository includes `deploy/install_crontab.sh` which installs a managed crontab block that runs the full daily workflow for you:
+
+- `run_scrapers_random.sh` — invoked at 00:00 daily by the cron block; sleeps a random delay (0–4 hours) and runs `revue`, `tiff` and `fox` scrapers (so scraping occurs between 00:00–04:00 local time).
+- `wait_for_scrapers_and_collate.sh` — scheduled at 04:30; waits for the scrapers to finish then runs `cal_collate.collate_all()` to produce `toronto_screenings.ics`.
+- `verify_collate_and_rotate.sh` — scheduled at 05:30; verifies the combined calendar and runs `log.rotate_and_zip_logs()` (creates the daily `YYYYMMDD_logs.zip`).
+
+Once installed you can set it and forget it — the crontab runs every day, updates the `.ics` files, and archives logs automatically.
+
 ```bash
-# Run all services with scheduling
-python revue.py &          # Runs at random time 11 PM - 4 AM
-python tiff.py &           # Runs at random time 11 PM - 4 AM  
-python cal_collate.py &    # Runs at 5 AM ET daily
+# Install the managed cron block (idempotent)
+./deploy/install_crontab.sh
+
+# Dry-run / inspect / remove
+./deploy/install_crontab.sh --dry-run   # show what would be installed
+./deploy/install_crontab.sh --show      # show current crontab + managed block
+./deploy/install_crontab.sh --remove    # remove the managed block
 ```
 
-This will:
-- Run each scraper immediately
-- Start background schedulers for daily runs at configured times
-- Update respective .ics files
-- Combine all calendars into `toronto_screenings.ics`
-- Press Ctrl+C to stop any service
+Long-running scheduler
+
+Run the centralized in‑process scheduler directly (keeps running until stopped) or run an individual scraper in scheduled mode.
+
+```bash
+# Start the centralized in-process scheduler
+python3 scheduling.py
+# Or start a single scraper with its internal scheduler
+python3 revue.py --schedule
+```
+
+Systemd example (short)
+
+```ini
+[Unit]
+Description=Toronto Screenings Scheduler
+After=network.target
+
+[Service]
+Type=simple
+User=your_user
+WorkingDirectory=/path/to/Calendar Extract
+ExecStart=/path/to/.venv/bin/python scheduling.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Systemd timer option (cron replacement)
+
+- You can use systemd timers instead of cron to run the full daily workflow. Example unit files are provided in the `deploy/` directory (`toronto-scrapers.timer`, `toronto-collate.timer`, `toronto-verify.timer`).
+- `toronto-scrapers.timer` runs `run_scrapers_random.sh` (script applies a random sleep 0–4h); `toronto-collate.timer` runs at 04:30 and `toronto-verify.timer` runs at 05:30.
+- Install by copying `deploy/toronto-*.service|.timer` to `/etc/systemd/system/`, then `sudo systemctl daemon-reload` and `sudo systemctl enable --now <timer-name>`.
+
+Docker example (short)
+
+```dockerfile
+# Dockerfile.scheduler (example)
+FROM python:3.11-slim
+WORKDIR /app
+COPY . /app
+RUN pip install -r requirements.txt && python -m playwright install chromium
+CMD ["python", "scheduling.py"]
+```
+
+# build & run
+```bash
+docker build -t toronto-scheduler -f Dockerfile.scheduler .
+docker run -d -v /path/to/output:/app toronto-scheduler
+```
+
+For full service and container examples see `DEPLOYMENT.md`.
+
+Notes:
+- Scrapers are **cron-friendly by default**: `python revue.py` performs a one-off run suitable for cron.
+- To set-and-forget, install the managed cron block with `./deploy/install_crontab.sh` — it is idempotent and will run scrapers, collate calendars, and rotate logs daily; once installed you can rely on the `.ics` files being updated automatically.
+- When using cron, ensure `api.env` (containing `OMDB_API_KEY`) exists at the project root and that `.venv` (if used) is present — the cron scripts `cd` into the repo and prefer `.venv/bin/python`.
+- Use Ctrl+C to stop any interactive scheduler.
 
 ## Output Files
 
 | File | Purpose | Update Frequency |
 |------|---------|------------------|
-| `revue.ics` | Revue Cinema events | Daily (random time 11 PM - 4 AM) |
-| `tiff.ics` | TIFF events (includes `location` + OMDb-based end times) | Daily (random time 11 PM - 4 AM) |
-| `fox.ics` | Fox Theatre events | Daily (random time 11 PM - 4 AM) |
+| `revue.ics` | Revue Cinema events | Daily (nightly — cron installer runs scrapers between 00:00–04:00 local time; `scheduling.py` uses 23:00–04:00 ET) |
+| `tiff.ics` | TIFF events (includes `location` + OMDb-based end times) | Daily (nightly — cron installer runs scrapers between 00:00–04:00 local time; `scheduling.py` uses 23:00–04:00 ET) |
+| `fox.ics` | Fox Theatre events | Daily (nightly — cron installer runs scrapers between 00:00–04:00 local time; `scheduling.py` uses 23:00–04:00 ET) |
 | `toronto_screenings.ics` | Combined all sources (revue + tiff + fox) | Daily at 5 AM ET |
 | `revue_scraper.log` | Revue scraper logs | Rotated daily if non-empty; live file recreated |
 | `fox_scraper.log` | Fox Theatre scraper logs | Rotated daily if non-empty; live file recreated |
@@ -101,14 +171,17 @@ https://your-server/toronto_screenings.ics
 ## Project Structure
 
 ```
-├── scraper_utils.py         # Shared utilities (logging, browser, scheduling)
-├── revue.py                 # Revue Cinema scraper
-├── fox.py                 # Fox Theatre scraper
-├── tiff.py                  # TIFF scraper
+├── scraper_utils.py         # Shared utilities (logging, browser, scheduling helpers)
+├── revue.py                 # Revue Cinema scraper (one‑off by default; use --schedule to run scheduler)
+├── fox.py                   # Fox Theatre scraper (one‑off by default; use --schedule to run scheduler)
+├── tiff.py                  # TIFF scraper (one‑off by default; use --schedule to run scheduler)
+├── scheduling.py            # Centralized scheduler for scrapers + collation (long-running service)
 ├── cal_collate.py           # Calendar collation service
+├── log.py                   # Log rotation & daily archive utility
+├── deploy/                  # Cron examples and crontab installer (ignored by git)
 ├── requirements.txt         # Python dependencies
-├── README.md               # This file
-└── DEPLOYMENT.md          # Server deployment guide
+├── README.md                # This file
+└── DEPLOYMENT.md            # Server deployment guide
 ```
 
 ## Troubleshooting

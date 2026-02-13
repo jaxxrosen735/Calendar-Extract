@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily timer to verify collation and rotate logs
+
+[Timer]
+OnCalendar=*-*-*05:30:00
+Persistent=true
+Unit=toronto-verify.service
+
+[Install]
+WantedBy=timers.target

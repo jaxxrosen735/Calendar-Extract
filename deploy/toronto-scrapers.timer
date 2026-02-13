@@ -1,0 +1,12 @@
+[Unit]
+Description=Daily timer to run scrapers (randomized delay)
+
+[Timer]
+# fires daily at 00:00; the service script applies its own random sleep (0-4h)
+OnCalendar=*-*-*00:00:00
+# additional randomized jitter (optional) — keeps behavior similar to cron + random delay
+RandomizedDelaySec=14400
+Persistent=true
+
+[Install]
+WantedBy=timers.target

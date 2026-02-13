@@ -1,0 +1,11 @@
+[Unit]
+Description=Toronto Screenings - Collate calendars (oneshot)
+After=network.target
+
+[Service]
+Type=oneshot
+User=your_username
+WorkingDirectory=/path/to/Calendar Extract
+EnvironmentFile=/path/to/Calendar Extract/api.env
+ExecStart=/path/to/Calendar Extract/wait_for_scrapers_and_collate.sh
+TimeoutStartSec=1h

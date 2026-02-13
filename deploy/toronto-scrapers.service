@@ -1,0 +1,13 @@
+[Unit]
+Description=Toronto Screenings - Run scrapers (oneshot)
+After=network.target
+
+[Service]
+Type=oneshot
+User=your_username
+WorkingDirectory=/path/to/Calendar Extract
+# Loads OMDB_API_KEY from api.env (optional)
+EnvironmentFile=/path/to/Calendar Extract/api.env
+# The script already implements a randomized delay; use RandomizedDelaySec in the timer for extra jitter if desired
+ExecStart=/path/to/Calendar Extract/run_scrapers_random.sh
+TimeoutStartSec=1h
