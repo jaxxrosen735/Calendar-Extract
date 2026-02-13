@@ -153,32 +153,16 @@ def collate_all():
     logger.info("COLLATION COMPLETE")
     logger.info("=" * 80)
 
-    # Post-collation: archive `omdb_not_found.txt` so the next scraper batch starts fresh.
+    # Post-collation: rotate and bundle logs (omdb_not_found + scraper logs).
     try:
-        omdb_file = 'omdb_not_found.txt'
-        if os.path.exists(omdb_file) and os.path.getsize(omdb_file) > 0:
-            # Append archive timestamp to the text file for traceability
-            ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            with open(omdb_file, 'a', encoding='utf-8') as f:
-                f.write(f"\nArchived by cal_collate: {ts}\n")
-
-            # Create a time-stamped zip archive and include the txt file inside it
-            zip_name = f"omdb_not_found_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
-            with zipfile.ZipFile(zip_name, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
-                zf.write(omdb_file, arcname=os.path.basename(omdb_file))
-
-            logger.info(f"Archived and compressed '{omdb_file}' → '{zip_name}'")
-
-            # Remove the original so scrapers will generate a fresh `omdb_not_found.txt` next run
-            try:
-                os.remove(omdb_file)
-                logger.info(f"Removed original '{omdb_file}' to allow fresh generation on next scraper run")
-            except Exception as rm_ex:
-                logger.warning(f"Could not remove '{omdb_file}': {rm_ex}")
+        from log import rotate_and_zip_logs
+        archive_name = rotate_and_zip_logs()
+        if archive_name:
+            logger.info(f"Rotated logs and created archive: {archive_name}")
         else:
-            logger.info("No omdb_not_found.txt to archive (missing or empty)")
+            logger.info("No logs were rotated (none present or empty).")
     except Exception as ex:
-        logger.error(f"Failed to archive omdb_not_found.txt: {ex}", exc_info=True)
+        logger.error(f"Failed to rotate logs: {ex}", exc_info=True)
 
 
 def schedule_collation():
