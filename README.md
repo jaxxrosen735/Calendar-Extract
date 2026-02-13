@@ -67,12 +67,23 @@ This will:
 |------|---------|------------------|
 | `revue.ics` | Revue Cinema events | Daily (random time 11 PM - 4 AM) |
 | `tiff.ics` | TIFF events (includes `location` + OMDb-based end times) | Daily (random time 11 PM - 4 AM) |
+| `fox.ics` | Fox Theatre events | Daily (random time 11 PM - 4 AM) |
 | `toronto_screenings.ics` | Combined all sources (revue + tiff + fox) | Daily at 5 AM ET |
-| `revue_scraper.log` | Revue scraper logs | Continuous |
-| `fox_scraper.log` | Fox Theatre scraper logs | Continuous |
-| `omdb_not_found.txt` | Titles not matched in OMDb (aggregated across scrapers) | Appended each run |
-| `tiff_scraper.log` | TIFF scraper logs | Continuous |
-| `cal_collate.log` | Collation service logs | Continuous |
+| `revue_scraper.log` | Revue scraper logs | Rotated daily if non-empty; live file recreated |
+| `fox_scraper.log` | Fox Theatre scraper logs | Rotated daily if non-empty; live file recreated |
+| `tiff_scraper.log` | TIFF scraper logs | Rotated daily if non-empty; live file recreated |
+| `cal_collate.log` | Collation service logs | Rotated daily if non-empty; live file recreated |
+| `omdb_not_found.txt` | Titles not matched in OMDb (aggregated across scrapers) | Rotated & archived daily into `YYYYMMDD_logs.zip` |
+
+### Logs & rotation
+
+- At the end of the collation run `cal_collate.collate_all()` the project rotates any non-empty `*_scraper.log` files, `cal_collate.log`, and `omdb_not_found.txt` into dated files (for example `revue_scraper_20260213.log`).
+- Rotated files are bundled into a single daily archive named `YYYYMMDD_logs.zip` (e.g. `20260213_logs.zip`) and the intermediate dated files are removed after archiving.
+- The rotation logic lives in `log.py` (function `rotate_and_zip_logs()`); `cal_collate` invokes it automatically after a successful collation.
+- After rotation the live filenames (`revue_scraper.log`, etc.) are recreated as empty files so scrapers continue writing to the same paths.
+- To run manually: `python3 log.py` (or `from log import rotate_and_zip_logs; rotate_and_zip_logs()`).
+- If you want automatic retention (delete archives older than N days), add a retention step — recommended as a follow-up.
+
 
 ## Subscribe to Calendar
 
@@ -103,10 +114,23 @@ https://your-server/toronto_screenings.ics
 ## Troubleshooting
 
 **Check what's happening:**
+
+- Live logs (current run):
 ```bash
 tail -f revue_scraper.log
 tail -f tiff_scraper.log
 tail -f cal_collate.log
+```
+
+- Inspect today's archived bundle (rotated at collation):
+```bash
+ls -l $(date +%Y%m%d)_logs.zip
+unzip -l $(date +%Y%m%d)_logs.zip
+```
+
+- Force a manual rotation / create today's archive:
+```bash
+python3 log.py
 ```
 
 **No events found:**
