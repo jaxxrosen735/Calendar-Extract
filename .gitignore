@@ -3,6 +3,7 @@
 *.log
 *.ics
 *.zip
+analyze_*.py
 debug*.html
 *.pyc
 omdb_not_found_archive.txt
