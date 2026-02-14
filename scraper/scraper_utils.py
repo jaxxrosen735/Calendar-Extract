@@ -1,3 +1,22 @@
+#
+# Event sorting utility
+def sort_events_by_start(events):
+    """
+    Sorts a list of event dicts by their 'start' datetime.
+    Args:
+        events: List of dicts, each with a 'start' key (datetime or ISO string)
+    Returns:
+        List of events sorted by start time ascending
+    """
+    def get_start(e):
+        s = e.get('start')
+        if isinstance(s, datetime):
+            return s
+        try:
+            return datetime.fromisoformat(s)
+        except Exception:
+            return datetime.max
+    return sorted(events, key=get_start)
 """
 Shared utilities for calendar scrapers
 Extracted common functions to be used by revue.py, tiff.py, and other scrapers

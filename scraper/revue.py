@@ -4,7 +4,7 @@ Scrapes the Revue Cinema scheduling calendar and generates revue.ics
 Integrates with OMDb API to get runtimes for accurate end times
 """
 
-from scraper_utils import setup_logging, launch_browser, find_next_button, schedule_daily, log_omdb_not_found
+from scraper_utils import setup_logging, launch_browser, find_next_button, schedule_daily, log_omdb_not_found, sort_events_by_start
 import argparse
 import sys
 from bs4 import BeautifulSoup
@@ -225,6 +225,9 @@ def scrape_all():
                 else:
                     break
         
+        # Sort events by start time before writing ICS
+        sorted_events = sort_events_by_start(list(full_cal.events))
+        full_cal.events = set(sorted_events)
         with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
             f.writelines(full_cal.serialize_iter())
         

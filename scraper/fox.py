@@ -3,7 +3,7 @@ Fox Theatre Calendar Scraper
 Scrapes foxtheatre.ca/whats-on/now-showing/ for event listings and generates fox.ics
 """
 
-from scraper_utils import setup_logging, launch_browser, schedule_daily, log_omdb_not_found
+from scraper_utils import setup_logging, launch_browser, schedule_daily, log_omdb_not_found, sort_events_by_start
 import argparse
 import sys
 from bs4 import BeautifulSoup
@@ -183,10 +183,11 @@ def scrape_all():
         
         soup = BeautifulSoup(page.content(), 'html.parser')
         total_events = parse_page(soup, full_cal)
-        
+        # Sort events by start time before writing ICS
+        sorted_events = sort_events_by_start(list(full_cal.events))
+        full_cal.events = set(sorted_events)
         if total_events > 0:
             with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-                # serialize_iter ensures proper ics formatting
                 f.writelines(full_cal.serialize_iter())
             logger.info(f"SUCCESS: Saved {total_events} events to {OUTPUT_FILE}")
         else:

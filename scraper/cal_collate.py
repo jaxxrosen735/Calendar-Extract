@@ -5,7 +5,7 @@ Runs daily at 5 AM ET and monitors file modification times
 """
 
 import sys
-from scraper_utils import schedule_daily, setup_logging, schedule_at_time
+from scraper_utils import schedule_daily, setup_logging, schedule_at_time, sort_events_by_start
 from ics import Calendar
 import os
 import glob
@@ -93,6 +93,9 @@ def combine_calendars(files: list):
             continue
     
     logger.info(f"Total events in combined calendar: {total_events}")
+    # Sort events by start time before returning
+    sorted_events = sort_events_by_start(list(master_cal.events))
+    master_cal.events = set(sorted_events)
     return master_cal
 
 def collate_all():
