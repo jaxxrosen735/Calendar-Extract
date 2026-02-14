@@ -4,7 +4,7 @@ Scrapes tiff.net/calendar for event listings and generates tiff.ics
 Integrates with OMDb API to get runtimes for accurate end times
 """
 
-from scraper.scraper_utils import setup_logging, launch_browser, schedule_daily, log_omdb_not_found
+from scraper_utils import setup_logging, launch_browser, schedule_daily, log_omdb_not_found
 import sys
 from bs4 import BeautifulSoup
 from ics import Calendar, Event
@@ -28,13 +28,17 @@ from dotenv import load_dotenv
 load_dotenv(dotenv_path='api.env')
 OMDB_API_URL = "https://www.omdbapi.com/"
 OMDB_API_KEY = os.environ.get("OMDB_API_KEY") or os.environ.get("API_KEY")
-if not OMDB_API_KEY:
-    raise RuntimeError("OMDB API key not found. Add OMDB_API_KEY (or API_KEY) to api.env or the environment.")
+from scraper_utils import setup_logging, launch_browser, schedule_daily, log_omdb_not_found
+import argparse
+raise RuntimeError("OMDB API key not found. Add OMDB_API_KEY (or API_KEY) to api.env or the environment.")
 # Updated for optimal Google Maps recognition
 TIFF_LOCATION = "TIFF Lightbox, 350 King St W, Toronto, ON M5V 3X5, Canada"
 LOCAL_TZ = pytz.timezone("America/Toronto")
 
 # Setup logging
+if not os.path.exists(LOG_FILE):
+    with open(LOG_FILE, 'w', encoding='utf-8'):
+        pass
 logger = setup_logging(LOG_FILE)
 
 # Cache for OMDb API calls to avoid repeated requests (limited to 1000/day)
@@ -83,6 +87,14 @@ def get_movie_runtime(title):
         omdb_cache[title] = None
         not_found_titles.add(title)
         return None
+
+# Debug flag
+parser = argparse.ArgumentParser()
+parser.add_argument('-d', '--debug', action='store_true', help='Enable OMDb debug logging')
+args, unknown = parser.parse_known_args()
+DEBUG_OMDB = args.debug
+
+DEBUG_OMDB_FILE = "debug_omdb.json"
 
 def clean_title(title_text):
     """Clean movie title by removing extra whitespace and normalizing."""

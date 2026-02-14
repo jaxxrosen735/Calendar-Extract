@@ -1,0 +1,124 @@
+/* Classic 90s Win95 Aesthetic */
+body {
+    background-color: #008080; /* Teal */
+    color: #ffffff;
+    font-family: "Courier New", Courier, monospace;
+    padding: 20px;
+}
+
+.window {
+    background-color: #c0c0c0; /* Gray */
+    color: #000000;
+    border: 3px outset #ffffff;
+    padding: 2px;
+    width: 90vw;
+    max-width: 90vw;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 5px 5px 0px rgba(0,0,0,0.5);
+}
+
+.title-bar {
+    background: linear-gradient(to right, #000080, #1084d0);
+    color: white;
+    padding: 3px 10px;
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.content {
+    padding: 15px;
+}
+
+.status-box {
+    border: 2px inset #ffffff;
+    background: #000000;
+    color: #00ff00; /* Terminal Green */
+    padding: 10px;
+    margin-top: 10px;
+    height: 150px;
+    font-size: 12px;
+    overflow-y: auto;
+}
+
+button {
+    background: #c0c0c0;
+    border: 2px outset #ffffff;
+    cursor: pointer;
+    padding: 4px 12px;
+    font-family: "Courier New", monospace;
+    font-weight: bold;
+}
+
+button:active {
+    border: 2px inset #ffffff;
+}
+
+.blink {
+    animation: blinker 1s linear infinite;
+}
+#calendar-container {
+    background: #ffffff;
+    border: 2px inset #ffffff;
+    margin-bottom: 15px;
+    color: #000;
+    width: 100%;
+    overflow-x: auto;
+    box-sizing: border-box;
+}
+#calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #c0c0c0;
+    padding: 5px;
+    border-bottom: 2px solid #808080;
+}
+#calendar-table th { background: #dfdfdf; font-size: 10px; }
+#calendar-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    min-width: 700px;
+    max-width: 100%;
+}
+#calendar-table th, #calendar-table td {
+    vertical-align: top;
+    width: 14.285%; /* 100/7 for 7 days */
+    padding: 2px;
+    font-size: 11px;
+    box-sizing: border-box;
+    word-break: break-word;
+}
+.today { background: #ffffd0; border: 2px solid #000080 !important; }
+.event-link {
+    display: block;
+    background: #000080;
+    color: white;
+    margin-top: 2px;
+    padding: 1px 3px;
+    text-decoration: none;
+    font-size: 9px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+.popup {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 10px 10px 0px rgba(0,0,0,0.3);
+}
+
+.event-link {
+    /* Update existing style to look clickable */
+    cursor: pointer;
+}
+
+.event-link:hover {
+    background: #0000ff; /* Brighter blue on hover */
+    text-decoration: underline;
+}
+@keyframes blinker { 50% { opacity: 0; } }

@@ -3,7 +3,8 @@ Fox Theatre Calendar Scraper
 Scrapes foxtheatre.ca/whats-on/now-showing/ for event listings and generates fox.ics
 """
 
-from scraper.scraper_utils import setup_logging, launch_browser, schedule_daily, log_omdb_not_found
+from scraper_utils import setup_logging, launch_browser, schedule_daily, log_omdb_not_found
+import argparse
 import sys
 from bs4 import BeautifulSoup
 from ics import Calendar, Event
@@ -20,6 +21,7 @@ import difflib
 BASE_URL = "https://www.foxtheatre.ca/whats-on/now-showing/"
 OUTPUT_FILE = "fox.ics"
 LOG_FILE = "fox_scraper.log"
+DEBUG_OMDB_FILE = "debug_omdb.json"
 from dotenv import load_dotenv
 
 # Load dotenv from api.env to read OMDb key
@@ -32,7 +34,31 @@ FOX_LOCATION = "Fox Theatre, 2236 Queen St E, Toronto, ON M4E 1G2, Canada"
 LOCAL_TZ = pytz.timezone("America/Toronto")
 
 # Setup logging
+if not os.path.exists(LOG_FILE):
+    with open(LOG_FILE, 'w', encoding='utf-8'):
+        pass
 logger = setup_logging(LOG_FILE)
+
+# Debug flag
+parser = argparse.ArgumentParser()
+parser.add_argument('-d', '--debug', action='store_true', help='Enable OMDb debug logging')
+args, unknown = parser.parse_known_args()
+DEBUG_OMDB = args.debug
+
+def log_omdb_debug(title, cleaned_title, response_data):
+    if not DEBUG_OMDB:
+        return
+    debug_entry = {
+        "timestamp": datetime.now().isoformat(),
+        "original_title": title,
+        "cleaned_title": cleaned_title,
+        "response": response_data
+    }
+    try:
+        with open(DEBUG_OMDB_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(debug_entry) + "\n")
+    except Exception as e:
+        logger.error(f"Failed to write to {DEBUG_OMDB_FILE}: {e}")
 
 def get_movie_duration_minutes(title):
     """
@@ -46,6 +72,7 @@ def get_movie_duration_minutes(title):
         # Exact lookup
         response = requests.get(url, params={"apikey": OMDB_API_KEY, "t": search_title}, timeout=5)
         data = response.json()
+        log_omdb_debug(title, search_title, data)
         if data.get("Response") == "True" and data.get("Runtime") != "N/A":
             runtime_mins = int(''.join(filter(str.isdigit, data.get("Runtime"))))
             return runtime_mins + 15
@@ -59,6 +86,7 @@ def get_movie_duration_minutes(title):
             if best:
                 cand_resp = requests.get(url, params={"apikey": OMDB_API_KEY, "t": best[0], "type": "movie"}, timeout=5)
                 cand = cand_resp.json()
+                log_omdb_debug(title, best[0], cand)
                 if cand.get('Response') == 'True' and cand.get('Runtime') not in (None, 'N/A'):
                     runtime_mins = int(''.join(filter(str.isdigit, cand.get('Runtime'))))
                     return runtime_mins + 15

@@ -4,7 +4,8 @@ Scrapes the Revue Cinema scheduling calendar and generates revue.ics
 Integrates with OMDb API to get runtimes for accurate end times
 """
 
-from scraper.scraper_utils import setup_logging, launch_browser, find_next_button, schedule_daily, log_omdb_not_found
+from scraper_utils import setup_logging, launch_browser, find_next_button, schedule_daily, log_omdb_not_found
+import argparse
 import sys
 from bs4 import BeautifulSoup
 from ics import Calendar, Event
@@ -35,7 +36,16 @@ if not OMDB_API_KEY:
     raise RuntimeError("OMDB API key not found. Add OMDB_API_KEY (or API_KEY) to api.env or the environment.")
 
 # Setup logging
+if not os.path.exists(LOG_FILE):
+    with open(LOG_FILE, 'w', encoding='utf-8'):
+        pass
 logger = setup_logging(LOG_FILE)
+
+# Debug flag
+parser = argparse.ArgumentParser()
+parser.add_argument('-d', '--debug', action='store_true', help='Enable OMDb debug logging')
+args, unknown = parser.parse_known_args()
+DEBUG_OMDB = args.debug
 
 # Cache for OMDb API calls
 omdb_cache = {}
@@ -43,6 +53,8 @@ not_found_titles = set()
 
 def log_omdb_debug(title, cleaned_title, response_data):
     """Appends raw OMDb API response to a debug file."""
+    if not DEBUG_OMDB:
+        return
     debug_entry = {
         "timestamp": datetime.now().isoformat(),
         "original_title": title,

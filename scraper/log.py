@@ -38,75 +38,74 @@ def rotate_and_zip_logs(date: str | None = None) -> str | None:
         Path to the created zip archive, or None if nothing was archived.
     """
     date = date or datetime.now().strftime('%Y%m%d')
-    rotated = []
-
-    # 1) Rotate *_scraper.log files
-    for src in glob.glob('*_scraper.log'):
-        try:
-            if not os.path.isfile(src):
-                continue
-            # rotate only if file has content
-            if os.path.getsize(src) > 0:
-                dst = _dated_name(src, date)
-                os.rename(src, dst)
-                rotated.append(dst)
-                logger.info("Rotated %s -> %s", src, dst)
-                # create an empty placeholder so logging can continue
-                open(src, 'a', encoding='utf-8').close()
-            else:
-                logger.debug("Skipping empty log file: %s", src)
-        except Exception as ex:
-            logger.warning("Failed rotating %s: %s", src, ex)
-
-    # 2) Optionally rotate collate log (helpful to include in daily bundle)
+    log_files = list(glob.glob('*_scraper.log'))
     collate_log = 'cal_collate.log'
-    if os.path.isfile(collate_log) and os.path.getsize(collate_log) > 0:
-        try:
-            dst = _dated_name(collate_log, date)
-            os.rename(collate_log, dst)
-            rotated.append(dst)
-            logger.info("Rotated %s -> %s", collate_log, dst)
-            open(collate_log, 'a', encoding='utf-8').close()
-        except Exception as ex:
-            logger.warning("Failed rotating %s: %s", collate_log, ex)
-
-    # 3) Rotate omdb_not_found.txt (if present)
     omdb_src = 'omdb_not_found.txt'
+    files_to_archive = []
+
+    # Collect all log files to archive (including collate and omdb logs)
+    for src in log_files:
+        if os.path.isfile(src) and os.path.getsize(src) > 0:
+            newname = f"{date}_{src}"
+            files_to_archive.append((src, newname))
+    if os.path.isfile(collate_log) and os.path.getsize(collate_log) > 0:
+        newname = f"{date}_{collate_log}"
+        files_to_archive.append((collate_log, newname))
     if os.path.isfile(omdb_src) and os.path.getsize(omdb_src) > 0:
+        # append a small archive marker for traceability
         try:
-            # append a small archive marker for traceability
             with open(omdb_src, 'a', encoding='utf-8') as f:
                 f.write(f"\nArchived by rotate_and_zip_logs: {datetime.now().isoformat()}\n")
-
-            omdb_dst = _dated_name('omdb_not_found.txt', date)
-            os.rename(omdb_src, omdb_dst)
-            rotated.append(omdb_dst)
-            logger.info("Rotated %s -> %s", omdb_src, omdb_dst)
         except Exception as ex:
-            logger.warning("Failed rotating %s: %s", omdb_src, ex)
+            logger.warning("Failed to append archive marker to %s: %s", omdb_src, ex)
+        newname = f"{date}_{omdb_src}"
+        files_to_archive.append((omdb_src, newname))
 
-    if not rotated:
+    if not files_to_archive:
         logger.info("No logs to rotate for %s", date)
         return None
 
-    # 4) Zip all rotated files together: <YYYYMMDD>_logs.zip
+    # 1) Copy all log files to new dated names (preserve contents for archiving)
+    for src, dst in files_to_archive:
+        try:
+            with open(src, 'rb') as fsrc, open(dst, 'wb') as fdst:
+                fdst.write(fsrc.read())
+            logger.info("Copied %s -> %s", src, dst)
+        except Exception as ex:
+            logger.warning("Failed copying %s to %s: %s", src, dst, ex)
+
+    # 2) Zip all new files together: <YYYYMMDD>_logs.zip
     zip_name = f"{date}_logs.zip"
     try:
         with zipfile.ZipFile(zip_name, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
-            for path in rotated:
+            for _, dst in files_to_archive:
                 try:
-                    zf.write(path, arcname=os.path.basename(path))
+                    zf.write(dst, arcname=os.path.basename(dst))
                 except Exception as ex:
-                    logger.warning("Failed to add %s to zip: %s", path, ex)
-        logger.info("Created archive %s (contains %d files)", zip_name, len(rotated))
+                    logger.warning("Failed to add %s to zip: %s", dst, ex)
+        logger.info("Created archive %s (contains %d files)", zip_name, len(files_to_archive))
 
-        # 5) Remove the rotated files now that they're archived
-        for path in rotated:
+        # 3) Remove the new files now that they're archived
+        for _, dst in files_to_archive:
             try:
-                os.remove(path)
+                os.remove(dst)
             except Exception as ex:
-                logger.warning("Failed to remove rotated file %s: %s", path, ex)
+                logger.warning("Failed to remove dated file %s: %s", dst, ex)
 
+        # After archiving, create new blank log files for all expected logs
+        blank_logs = [
+            'fox_scraper.log',
+            'tiff_scraper.log',
+            'revue_scraper.log',
+            'cal_collate.log',
+            'omdb_not_found.txt',
+        ]
+        for fname in blank_logs:
+            try:
+                open(fname, 'w', encoding='utf-8').close()
+                logger.info("Created blank log file: %s", fname)
+            except Exception as ex:
+                logger.warning("Failed to create blank log file %s: %s", fname, ex)
         return zip_name
 
     except Exception as ex:
