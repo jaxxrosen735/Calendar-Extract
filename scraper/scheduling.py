@@ -14,12 +14,12 @@ Or import `start()` and call programmatically from another long-running service.
 
 import time
 import logging
-from scraper_utils import schedule_daily, schedule_at_time
+from scraper.scraper_utils import schedule_daily, schedule_at_time
 
 # Import scraper entry points (functions should perform a single run)
-from revue import scrape_all as revue_scrape
-from tiff import scrape_all as tiff_scrape
-from fox import scrape_all as fox_scrape
+from scraper.revue import scrape_all as revue_scrape
+from scraper.tiff import scrape_all as tiff_scrape
+from scraper.fox import scrape_all as fox_scrape
 from scraper.cal_collate import collate_all as collate_all
 
 logger = logging.getLogger(__name__)

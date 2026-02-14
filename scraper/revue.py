@@ -4,7 +4,7 @@ Scrapes the Revue Cinema scheduling calendar and generates revue.ics
 Integrates with OMDb API to get runtimes for accurate end times
 """
 
-from scraper_utils import setup_logging, launch_browser, find_next_button, schedule_daily, log_omdb_not_found
+from scraper.scraper_utils import setup_logging, launch_browser, find_next_button, schedule_daily, log_omdb_not_found
 import sys
 from bs4 import BeautifulSoup
 from ics import Calendar, Event

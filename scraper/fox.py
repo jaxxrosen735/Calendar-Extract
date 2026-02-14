@@ -3,7 +3,7 @@ Fox Theatre Calendar Scraper
 Scrapes foxtheatre.ca/whats-on/now-showing/ for event listings and generates fox.ics
 """
 
-from scraper_utils import setup_logging, launch_browser, schedule_daily, log_omdb_not_found
+from scraper.scraper_utils import setup_logging, launch_browser, schedule_daily, log_omdb_not_found
 import sys
 from bs4 import BeautifulSoup
 from ics import Calendar, Event

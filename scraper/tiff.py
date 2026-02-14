@@ -4,7 +4,7 @@ Scrapes tiff.net/calendar for event listings and generates tiff.ics
 Integrates with OMDb API to get runtimes for accurate end times
 """
 
-from scraper_utils import setup_logging, launch_browser, schedule_daily, log_omdb_not_found
+from scraper.scraper_utils import setup_logging, launch_browser, schedule_daily, log_omdb_not_found
 import sys
 from bs4 import BeautifulSoup
 from ics import Calendar, Event
