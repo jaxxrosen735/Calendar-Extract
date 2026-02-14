@@ -4,7 +4,8 @@ Combines multiple calendar .ics files into a single master calendar (toronto_scr
 Runs daily at 5 AM ET and monitors file modification times
 """
 
-from scraper_utils import setup_logging, schedule_at_time
+import sys
+from scraper_utils import schedule_daily, setup_logging, schedule_at_time
 from ics import Calendar
 import os
 import glob
@@ -177,7 +178,7 @@ def schedule_collation():
     )
     return scheduler
 
-if __name__ == "__main__":
+""" if __name__ == "__main__":
     logger.info("Calendar Collation Service Starting")
     
     # Run once immediately
@@ -196,3 +197,32 @@ if __name__ == "__main__":
         logger.info("Shutting down scheduler...")
         scheduler.shutdown()
         logger.info("Scheduler stopped")
+ """
+def schedule_scrape():
+    """Schedule cal_collate to run daily at a random time between 11 PM and 4 AM ET."""
+    logger.info("Initializing scheduler for collation...")
+    scheduler = schedule_daily(
+        collate_all,
+        job_id='cal_collate',
+        job_name='Calendar Collation Service',
+        min_hour=23,
+        max_hour=4
+    )
+    return scheduler
+
+if __name__ == "__main__":
+    # Default behaviour: one-off run (cron-friendly). Use --schedule to run background scheduler.
+    if '--schedule' in sys.argv or '-s' in sys.argv:
+        logger.info("TIFF Calendar Scraper Starting (scheduled mode)")
+        scheduler = schedule_scrape()
+        try:
+            logger.info("Scheduler running — press Ctrl+C to stop")
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            logger.info("Shutting down scheduler...")
+            scheduler.shutdown()
+            logger.info("Scheduler stopped")
+    else:
+        logger.info("Calendar Collation Service Starting — one-off run")
+        collate_all()
