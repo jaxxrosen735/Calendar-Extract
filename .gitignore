@@ -8,5 +8,6 @@ analyze*.py
 *.pyc
 omdb_not_found_archive.txt
 omdb_not_found.txt
-Dockerfile.scheduler
-.dockerignore
+
+localdev_app/
+
