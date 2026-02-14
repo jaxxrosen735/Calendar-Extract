@@ -76,7 +76,7 @@ Run the centralized in‑process scheduler directly (keeps running until stopped
 
 ```bash
 # Start the centralized in-process scheduler
-python3 scraper/scheduling.py
+python -m scraper.scheduling
 # Or start a single scraper with its internal scheduler
 python3 scraper/revue.py --schedule
 ```
@@ -92,7 +92,7 @@ After=network.target
 Type=simple
 User=your_user
 WorkingDirectory=/path/to/Calendar Extract
-ExecStart=/path/to/.venv/bin/python scraper/scheduling.py
+ExecStart=/path/to/.venv/bin/python -m scraper.scheduling
 Restart=on-failure
 RestartSec=10
 
