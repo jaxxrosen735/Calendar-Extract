@@ -213,7 +213,7 @@ def schedule_scrape():
 if __name__ == "__main__":
     # Default behaviour: one-off run (cron-friendly). Use --schedule to run background scheduler.
     if '--schedule' in sys.argv or '-s' in sys.argv:
-        logger.info("TIFF Calendar Scraper Starting (scheduled mode)")
+        logger.info("Collation Starting (scheduled mode)")
         scheduler = schedule_scrape()
         try:
             logger.info("Scheduler running — press Ctrl+C to stop")
