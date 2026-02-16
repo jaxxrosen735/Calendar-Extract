@@ -6,8 +6,8 @@
 debug*.html
 analyze*.py
 *.pyc
-omdb_not_found_archive.txt
 omdb_not_found.txt
+omdb_not_found*.txt
 *_logs/
 localdev_app/
 
