@@ -13,3 +13,4 @@ localdev_app/
 
 
 testing/
+.dockerignore
