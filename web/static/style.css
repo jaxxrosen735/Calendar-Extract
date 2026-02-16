@@ -1,13 +1,15 @@
 /* Classic 90s Win95 Aesthetic */
 body {
-    background-color: #008080; /* Teal */
+    background-color: #008080;
+    /* Teal */
     color: #ffffff;
     font-family: "Courier New", Courier, monospace;
     padding: 20px;
 }
 
 .window {
-    background-color: #c0c0c0; /* Gray */
+    background-color: #c0c0c0;
+    /* Gray */
     color: #000000;
     border: 3px outset #ffffff;
     padding: 2px;
@@ -15,7 +17,7 @@ body {
     max-width: 90vw;
     margin-left: auto;
     margin-right: auto;
-    box-shadow: 5px 5px 0px rgba(0,0,0,0.5);
+    box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.5);
 }
 
 .title-bar {
@@ -36,7 +38,8 @@ body {
 .status-box {
     border: 2px inset #ffffff;
     background: #000000;
-    color: #00ff00; /* Terminal Green */
+    color: #00ff00;
+    /* Terminal Green */
     padding: 10px;
     margin-top: 10px;
     height: 150px;
@@ -60,6 +63,7 @@ button:active {
 .blink {
     animation: blinker 1s linear infinite;
 }
+
 #calendar-container {
     background: #ffffff;
     border: 2px inset #ffffff;
@@ -69,6 +73,7 @@ button:active {
     overflow-x: auto;
     box-sizing: border-box;
 }
+
 #calendar-header {
     display: flex;
     justify-content: space-between;
@@ -77,7 +82,12 @@ button:active {
     padding: 5px;
     border-bottom: 2px solid #808080;
 }
-#calendar-table th { background: #dfdfdf; font-size: 10px; }
+
+#calendar-table th {
+    background: #dfdfdf;
+    font-size: 10px;
+}
+
 #calendar-table {
     width: 100%;
     table-layout: fixed;
@@ -85,15 +95,23 @@ button:active {
     min-width: 700px;
     max-width: 100%;
 }
-#calendar-table th, #calendar-table td {
+
+#calendar-table th,
+#calendar-table td {
     vertical-align: top;
-    width: 14.285%; /* 100/7 for 7 days */
+    width: 14.285%;
+    /* 100/7 for 7 days */
     padding: 2px;
-    font-size: 11px;
+    font-size: 14px;
     box-sizing: border-box;
     word-break: break-word;
 }
-.today { background: #ffffd0; border: 2px solid #000080 !important; }
+
+.today {
+    background: #ffffd0;
+    border: 2px solid #000080 !important;
+}
+
 .event-link {
     display: block;
     background: #000080;
@@ -101,16 +119,17 @@ button:active {
     margin-top: 2px;
     padding: 1px 3px;
     text-decoration: none;
-    font-size: 9px;
+    font-size: 13.25px;
     overflow-wrap: break-word;
     white-space: normal;
     word-break: break-word;
 }
+
 .popup {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    box-shadow: 10px 10px 0px rgba(0,0,0,0.3);
+    box-shadow: 10px 10px 0px rgba(0, 0, 0, 0.3);
 }
 
 .event-link {
@@ -119,7 +138,13 @@ button:active {
 }
 
 .event-link:hover {
-    background: #0000ff; /* Brighter blue on hover */
+    background: #0000ff;
+    /* Brighter blue on hover */
     text-decoration: underline;
 }
-@keyframes blinker { 50% { opacity: 0; } }
+
+@keyframes blinker {
+    50% {
+        opacity: 0;
+    }
+}
