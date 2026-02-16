@@ -4,7 +4,9 @@ set -euo pipefail
 # Ensure toronto_screenings.ics exists (re-run collate if necessary), then run log rotation
 # Usage: scheduled once daily after collate (e.g. 05:30)
 
-cd "$(dirname "$0")"
+# cd "$(dirname "$0")"
+cd "$(dirname "$0")/.." # Move to project root
+
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PYTHON="$PROJECT_ROOT/.venv/bin/python"
 if [ ! -x "$PYTHON" ]; then

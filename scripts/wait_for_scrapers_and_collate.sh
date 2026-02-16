@@ -4,7 +4,9 @@ set -euo pipefail
 # Wait for scrapers to finish (scrapers_last_done.txt) then run collate_all()
 # Usage: scheduled once daily after the scraper window (e.g. 04:30)
 
-cd "$(dirname "$0")"
+# cd "$(dirname "$0")"
+cd "$(dirname "$0")/.." # Move to project root
+
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PYTHON="$PROJECT_ROOT/.venv/bin/python"
 if [ ! -x "$PYTHON" ]; then

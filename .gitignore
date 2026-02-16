@@ -11,3 +11,5 @@ omdb_not_found*.txt
 *_logs/
 localdev_app/
 
+
+testing/

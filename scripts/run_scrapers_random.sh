@@ -4,7 +4,9 @@ set -euo pipefail
 # Run all three scrapers at a random time between 00:00 and 04:00.
 # Usage: invoked once daily by cron at 00:00; the script chooses a random delay.
 
-cd "$(dirname "$0")"
+# cd "$(dirname "$0")" # Don't just cd to script dir, we want to run from project root
+cd "$(dirname "$0")/.." # Move to project root
+
 
 # Project root
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
