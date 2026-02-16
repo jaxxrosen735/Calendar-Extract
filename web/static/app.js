@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // checkCdnStatus();
     loadCalendarData();
     setupDraggable();
-    
+
     // Poll system status every 30 seconds
     setInterval(updateSystemStatus, 30000);
     updateSystemStatus();
@@ -42,16 +42,16 @@ function checkCdnStatus() {
  */
 async function loadCalendarData() {
     try {
-        const response = await fetch('/calendar'); 
+        const response = await fetch('/calendar');
         if (!response.ok) throw new Error(`HTTP_ERR_${response.status}`);
-        
+
         const rawData = await response.text();
 
         // FIX: Use ICAL.parse() but wrap it in an ICAL.Component
         // Some versions of ical.js require this specific sequence for raw strings:
         const jcalData = ICAL.parse(rawData);
         const comp = new ICAL.Component(jcalData);
-        
+
         // Ensure we are looking at the VCALENDAR level
         calendarEvents = comp.getAllSubcomponents('vevent').map(vevent => {
             const event = new ICAL.Event(vevent);
@@ -66,7 +66,7 @@ async function loadCalendarData() {
                 uid: event.uid || '',
             };
         });
-        
+
         renderCalendar();
         addLog("CALENDAR_SYNC_COMPLETE", "cyan");
     } catch (e) {
@@ -83,10 +83,10 @@ function renderCalendar() {
     const month = currentViewDate.getMonth();
 
     monthDisplay.innerText = currentViewDate.toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase();
-    
+
     // Windows 95 Table Headers
     let html = '<tr bgcolor="#c0c0c0"><th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th></tr><tr>';
-    
+
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
@@ -99,11 +99,11 @@ function renderCalendar() {
         if ((firstDay + day - 1) % 7 === 0 && day !== 1) {
             html += '</tr><tr>';
         }
-        
+
         const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
-        const dayEvents = calendarEvents.filter(e => 
-            e.start.getFullYear() === year && 
-            e.start.getMonth() === month && 
+        const dayEvents = calendarEvents.filter(e =>
+            e.start.getFullYear() === year &&
+            e.start.getMonth() === month &&
             e.start.getDate() === day
         );
 
@@ -116,9 +116,9 @@ function renderCalendar() {
             // Pass all details to popup
             return `<div class="event-link" onclick="showEventDetails('${safeTitle}', '${safeDesc}', '${safeLocation}', '${safeTime}', '${safeEnd}')">${e.time ? e.time + ' ' : ''}${e.title}</div>`;
         }).join('');
-        html += `<td class="${isToday ? 'today' : ''}"><b>${day}</b>${eventHtml}</td>`;
+        html += `<td class="${isToday ? 'today' : ''}"><div class="day-scroll-wrapper"><b>${day}</b>${eventHtml}</div></td>`;
     }
-    
+
     html += '</tr>';
     table.innerHTML = html;
 }
@@ -141,7 +141,7 @@ function showEventDetails(title, description, location, time, end) {
     document.getElementById('modal-desc').innerText = details;
     document.getElementById('event-modal').style.display = 'block';
     document.getElementById('modal-overlay').style.display = 'block';
-    addLog(`VIEWING_EVENT: ${title.substring(0,15)}...`, "white");
+    addLog(`VIEWING_EVENT: ${title.substring(0, 15)}...`, "white");
 }
 
 function closeModal() {
