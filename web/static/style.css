@@ -149,19 +149,29 @@ button:active {
     }
 }
 
-/* Responsive adjustment for laptop screens (approx < 17") */
+/* Default: Large screens (> 3200px) - Approx 8 events */
+.day-scroll-wrapper {
+    max-height: 660px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.day-scroll-wrapper,
+.event-link {
+    line-height: normal;
+    /* Ensure consistent line-height */
+}
+
+/* Medium screens (< 3200px) - Approx 6 events */
+@media (max-width: 3200px) {
+    .day-scroll-wrapper {
+        max-height: 440px;
+    }
+}
+
+/* Laptop/Small screens (< 1600px) - Approx 4 events */
 @media (max-width: 1600px) {
     .day-scroll-wrapper {
         max-height: 220px;
-        /* ~10 lines based on expected line-height + padding */
-        overflow-y: auto;
-        padding-right: 2px;
-        /* Prevent scrollbar overlap with content slightly */
-    }
-
-    /* Ensure consistent line-height so we don't cut text in half */
-    .day-scroll-wrapper,
-    .event-link {
-        line-height: normal;
     }
 }
